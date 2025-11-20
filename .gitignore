@@ -6,11 +6,11 @@ notebook/*.png
 notebook/*.csv
 notebook/*.pdf
 *~
-*.txt
 __pycache__/
 westcott/__pycache__/
 westcott/*.~
 tests/__pycache__/
 tests/*.~
 .tox/
+files_installed.txt
 .PACT

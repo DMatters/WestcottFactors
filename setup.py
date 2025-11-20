@@ -5,7 +5,7 @@ requirements = ["numpy", "scipy", "pandas"]
 setuptools.setup(
     name="westcott",
     version="0.1.0",
-    #url="https://github.com/AaronMHurst/",
+    url="https://github.com/AaronMHurst/Westcott",
     author="Aaron M. Hurst",
     author_email="amhurst@berkeley.edu",
     description="Calculations of Westcott g-factors.",
