@@ -1,3 +1,4 @@
+from .log_handlers import *
 from .tables import *
 from .user import *
 from .westcott_gfactors import *

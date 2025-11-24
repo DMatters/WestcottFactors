@@ -13,7 +13,7 @@ rm -f westcott/*~
 rm -f westcott/data_capture/*~
 rm -f westcott/data_spectra/*~
 rm -f tests/*~
-rm -f tests/__pycache__
+rm -rf tests/__pycache__
 rm -rf westcott/__pycache__
 rm -rf __pycache__
 rm -rf .tox

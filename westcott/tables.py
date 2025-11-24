@@ -3,10 +3,11 @@ np.set_printoptions(legacy='1.25')
 from scipy.integrate import trapezoid
 import pandas as pd
 pd.set_option('display.max_rows', None)
-#import matplotlib.pyplot as plt
 import os, glob
 import re
 import csv
+
+from .log_handlers import *
 
 class CrossSectionData(object):
     __doc__="""Class to handle neutron-capture cross section data tables from 
@@ -37,7 +38,7 @@ class CrossSectionData(object):
             if k==self.target:
                 df = pd.read_csv("{0}/{1}".format(self.capture_data_path, v))
         if df is None:
-            print("No capture-gamma cross section data for target nucleus: {0}".format(target))
+            logger.error("No capture-gamma cross section data for target nucleus: {0}".format(target))
             return
         else:
             return df
@@ -82,7 +83,7 @@ class NeutronFlux(CrossSectionData):
             if k==self.flux:
                 df = pd.read_csv("{0}/{1}".format(self.flux_data_path, v))
         if df is None:
-            print("Spectrum not defined for argument:".format(self.flux))
+            logger.warning("Spectrum not defined for argument:".format(self.flux))
             return
         else:
             return df
@@ -141,6 +142,8 @@ class ResonanceData(NeutronFlux):
         Arguments:
         Returns:
         Raises:
+            A TypeError exception gets raised if a string argument gets passed 
+            without a keyword.
 
         Example:
             Find all resonances:
@@ -159,21 +162,16 @@ class ResonanceData(NeutronFlux):
             for key in self.kwargs.keys():
                 if key == 'res':
                     for res in kwargs.values():
-                        if res == 'BW':
+                        if res.upper() == 'BW':
                             return [target for (target, value) in self.res_sorted_dict.items() if value[1]=='BreitWigner']
-                        elif res == 'RM':
+                        elif res.upper() == 'RM':
                             return [target for (target, value) in self.res_sorted_dict.items() if value[1]=='ReichMoore']
                         else:
-                            print("Unknown keyword argument for resonance parametrizations.")
-                            print("Use one of the following methods:")
-                            print("`find_resonances()`")
-                            print("`find_resonances(res='BW')`")
-                            print("`find_resonances(res='RM')`")
-                    else:
-                        print("Unkown key: use one of the following methods:")
-                        print("`find_resonances()`")
-                        print("`find_resonances(res='BW')`")
-                        print("`find_resonances(res='RM')`")
+                            logger.warning("Unknown keyword argument for resonance parametrizations.\nUse one of the following methods:\n`find_resonances()`\n`find_resonances(res='BW')`\n`find_resonances(res='RM')`")
+                            return
+                else:
+                    logger.warning("Unkown key: use one of the following methods:\n`find_resonances()`\n`find_resonances(res='BW')`\n`find_resonances(res='RM')`")
+                    return
 
     def get_res_paras(self, target):
         """Extract resonance parameters for a defined target nucleus and return 
@@ -189,10 +187,9 @@ class ResonanceData(NeutronFlux):
                 PARAS_EXIST = True
                 df = pd.read_csv("{0}/ReichMoore/{1}".format(self.res_data_path, csv_object[0]))
         if PARAS_EXIST == False:
-            print("No resonance parameters available for defined target or target does not exist.")
+            logger.error("No resonance parameters available for defined target or target does not exist.")
+            return
                 
         df_sorted = df.sort_values(by='energy')
         return df_sorted
-    
-
     
