@@ -55,7 +55,7 @@ formatter = logging.Formatter(
 )
 
 def write_logs(level=logging.DEBUG):
-    file_handler = logging.FileHandler("app_PyGammaRAD.log", mode="a", encoding="utf-8")
+    file_handler = logging.FileHandler("app_westcott.log", mode="a", encoding="utf-8")
     file_handler.setFormatter(formatter)
     file_handler.setLevel(level)
     logger.addHandler(file_handler)
