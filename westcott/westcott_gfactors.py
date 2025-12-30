@@ -10,7 +10,7 @@ class Kinematics(UserSpectrum):
     kB_eVK = 8.6117343 #Boltzmann's constant, eV/K
     h = 6.626183e-34 #Planck's constant, J*s
     h_eVs = 4.13567e-15 #Planck's constant, eV*s
-    
+   
     # Thermal quantities
     v_0 = 2200 #thermal-neutron velocity, m/s
     E_0 = 1/2 * m_n * v_0**2 / eV #eV
@@ -86,7 +86,7 @@ class Irregularity(Kinematics):
         K = Kinematics()
         phi = None
         if T is None:
-            phi = K.phi_Maxwellian(K.T_0, np.linspace(1,100000,100000))
+            phi = K.phi_Maxwellian(K.T_0, np.logspace(0,5,100000))
         else:
             phi = K.phi_Maxwellian(self.T, self.vn)
 
@@ -97,7 +97,7 @@ class Irregularity(Kinematics):
         N = trapezoid(np.array(p_array), self.vn)  # Normalization factor, to ensure integral of p(T,v) integrates to unity (Molnar p. 12)
         return np.array(p_array)/N
 
-    def gw_irregularity(self, E_resonance, Gamma, T=None, vn=np.linspace(1,100000,100000)):
+    def gw_irregularity(self, E_resonance, Gamma, T=None, vn=np.logspace(0,5,100000)):
         """Evaluate g-factor using irregularity function method described by 
         Molnar et al. (Eqs. 1-5)."""
         self.E_resonance = E_resonance
@@ -118,7 +118,7 @@ class gFactors(Irregularity):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
 
-    def gw_Maxwellian(self, T, E, sigma):
+    def gw_Maxwellian(self, T, E, sigma, vn=np.logspace(0,5,100000)):
         """Westcott g-factor according to assumed theoretical Maxwellian 
         distribution at a given neutron temperature."""
         self.T = T
@@ -126,12 +126,14 @@ class gFactors(Irregularity):
         self.sigma = sigma
 
         K = Kinematics()
-        v = K.vel(self.E)  #convert neutron energy to velocity
-        dndv = K.phi_Maxwellian(self.T, v)
-        sigma0 = np.interp(K.v_0, v, self.sigma)  #thermal cross section, barns
-        return 1/(sigma0 * K.v_0) * trapezoid(dndv * v * self.sigma, v) / trapezoid(dndv, v)
+        v_sigma = K.vel(self.E)  #convert neutron energy to velocity
+        dndv = K.phi_Maxwellian(self.T, vn)
+        sigma0 = np.interp(K.v_0, v_sigma, self.sigma)  #thermal cross section, barns
+        sigma_interp = np.interp(vn, v_sigma, self.sigma)
 
-    def gw_arbitrary(self, E_spectrum, dndE_spectrum, E_endf, sigma_endf):
+        return 1/(sigma0 * K.v_0) * trapezoid(dndv * vn * sigma_interp, vn) / trapezoid(dndv, vn)
+
+    def gw_arbitrary(self, E_spectrum, dndE_spectrum, E_endf, sigma_endf, vn=np.logspace(0,5,100000)):
         """Integrate to evaluate Westcott g-factor for an arbitrary neutron 
         flux distribution."""
         self.E_spectrum = E_spectrum
@@ -140,16 +142,13 @@ class gFactors(Irregularity):
         self.sigma_endf = sigma_endf
 
         K = Kinematics()
-        
+        E_n = 0.5*K.m_n * vn**2/K.eV  #energy space, eV
+        dndE_interp = np.interp(E_n, self.E_spectrum, self.dndE_spectrum, left=0, right=0)
+        dndv_interp = np.sqrt(2 * K.m_n * E_n) * dndE_interp
         v_sigma = K.vel(self.E_endf)
-        v_spectrum = K.vel(self.E_spectrum)
-        dndv = self.dndE_spectrum
-    
-        # Interpolate to define flux everywhere the cross section is defined, with zeros outside range to integrate properly
-        dndv_interp = np.interp(v_sigma, v_spectrum, dndv, left=0, right=0)
-    
+        sigma_interp = np.interp(vn, v_sigma, self.sigma_endf)
         sigma0 = np.interp(K.v_0, v_sigma, self.sigma_endf)  #thermal cross section, barns
-
-        return 1/(sigma0 * K.v_0) * trapezoid(dndv_interp * v_sigma * self.sigma_endf, v_sigma) / trapezoid(dndv_interp, v_sigma)
+    
+        return 1/(sigma0 * K.v_0) * trapezoid(dndv_interp * vn * sigma_interp, vn) / trapezoid(dndv_interp, vn)
 
     
